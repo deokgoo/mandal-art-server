@@ -1,9 +1,14 @@
-FROM python:3.9.12
+# 
+FROM python:3.9
 
-WORKDIR /usr/src/app
+# 
+WORKDIR /src
 
+# 
 COPY ./requirements.txt ./
 
-RUN pip install -r requirements.txt
+# 
+RUN pip install --no-cache-dir --upgrade -r requirements.txt
 
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# 
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
