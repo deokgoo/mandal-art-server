@@ -1,3 +1,5 @@
+import numbers
+from turtle import tilt
 from typing import List
 from pymongo import MongoClient
 import strawberry
@@ -6,54 +8,46 @@ from fastapi import FastAPI
 from strawberry.asgi import GraphQL
 
 client = MongoClient("mongodb://root:example@mongo:27017/")
-db = client.library
+db = client.mandala
 
 @strawberry.type
-class Book:
+class Mandal:
   title: str
-  author: str
+  childs: typing.List[str]
 
-@strawberry.type
-class Author:
-  name: str
-  books: typing.List[Book]
 
 @strawberry.type
 class Query:
-    hello: str = strawberry.field(resolver=lambda: "Hello World!")
-    books: List[Book] = strawberry.field(resolver= lambda: [Book(
-        title=book['title'],
-        author=book['author']
-    ) for book in db.books.find()])
-    authors: List[Author] = strawberry.field(resolver= lambda: [Author(
-        name=author['name'],
-        books=[Book(title=book['title'], author=book['author']) for book in db.books.find({"author": author.name})]
-    ) for author in db.authors.find()])
+    @strawberry.field
+    def mandals(self) -> List[Mandal]:
+      return [Mandal(
+        title=mandal['title'],
+        childs=mandal['childs']
+      ) for mandal in db.mandals.find()]
 
-@strawberry.input
-class AddBookInput:
-  title: str = strawberry.field(description="The title of the book")
-  author: str = strawberry.field(description="The name of the author")
+    @strawberry.field
+    def mandal(self, title: str) ->Mandal:
+      m = db.mandals.find_one({'title': title})
+      return Mandal(title=m['title'], childs=m['childs'])
 
 @strawberry.type
 class Mutation:
   @strawberry.mutation
-  def add_book(self, book:AddBookInput) -> Book:
-    db.books.insert_one({'title': book.title, 'author':book.author })
-    print(f'Adding {book.title} by {book.title}')
-    return Book(title=book.title, author=book.author)
+  def set_mandal(self, title: str, childs: typing.List[str]) -> None:
 
-
-# mutation {
-#   addBook(book: {
-#     title: "hia",
-#     author: "hellbo"
-#   }) {
-#     title
-#     author
-#   }
-# }
-
+    if db.mandals.find_one({'title': title}) is None:
+      db.mandals.insert_one({
+        'title': title, 
+        'childs': childs 
+      })
+    else:
+      db.mandals.find_one_and_replace({'title': title}, {
+        'title': title, 
+        'childs': childs 
+      })
+  @strawberry.mutation
+  def delete_mandal(self, title: str) -> None:
+    db.mandals.delete_one({'title': title})
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 
