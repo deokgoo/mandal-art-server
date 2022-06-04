@@ -1,11 +1,11 @@
 version: "3.9"
 services:
-  django:
+  fast-api:
     build: .
     ports:
       - "8000:8000"
     volumes:
-      - ./src:/usr/src/app
+      - ./app:/src/app
 
   mongo:
     image: mongo
